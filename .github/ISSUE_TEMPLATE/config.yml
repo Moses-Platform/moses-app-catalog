@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sensitive security report
+    url: https://github.com/moses-platform/moses-app-catalog/security/advisories/new
+    about: For sensitive vulnerabilities, file a private security advisory or follow SECURITY.md instead of opening a public issue.
+  - name: Question about a specific app
+    url: https://github.com/moses-platform/moses-app-catalog/blob/main/CONTRIBUTING.md
+    about: Questions about a published app belong on that app's own repo. The link points at our contributing guide so you can find the app's maintainer contact.

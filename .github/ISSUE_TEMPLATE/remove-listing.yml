@@ -1,0 +1,76 @@
+name: Request removal of a listing
+description: Request that a listing be delisted or that a specific version be yanked.
+title: "[remove] <slug>: <reason in five words>"
+labels: ["delisting"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Removal is a governance action. See
+        [GOVERNANCE.md § Delisting](../GOVERNANCE.md#delisting) for the full
+        process and the criteria reviewers will apply. Use this form for:
+
+        - A listing maintainer voluntarily delisting their own app
+        - A third party reporting that a listing must be removed
+          (license violation, malware, broken-promise abandonment, etc.)
+        - A request to yank a specific published version
+
+        For sensitive security reports, do **not** open a public issue —
+        follow [SECURITY.md](../SECURITY.md) instead.
+  - type: input
+    id: slug
+    attributes:
+      label: Listing slug
+      placeholder: my-app-slug
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Delist the entire listing (tombstone)
+        - Yank a single version (set yanked: true)
+        - Other (explain below)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version to yank (if applicable)
+      placeholder: 1.2.3
+  - type: dropdown
+    id: requester-role
+    attributes:
+      label: Are you the listing maintainer?
+      options:
+        - Yes, I'm a listed maintainer for this app
+        - No, I'm a third party reporting an issue
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason
+      description: |
+        Why does this listing need to be removed? Cite the specific clause of
+        the disqualifying-conditions list in CONTRIBUTING.md if applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: |
+        Links, screenshots (hosted externally), CVE IDs, license texts, etc.
+        Maintainer self-delisting requests don't need evidence; third-party
+        requests do.
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I understand removal is reviewed by maintainers and is not automatic.
+          required: true
+        - label: I have not posted any sensitive security details that should have gone to SECURITY.md.
+          required: true

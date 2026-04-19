@@ -1,0 +1,52 @@
+name: Security report (low-severity, public)
+description: For low-severity, non-sensitive security reports about the catalog tooling. For anything sensitive, follow SECURITY.md instead.
+title: "[security-public] <short description>"
+labels: ["security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Stop and read this first
+
+        Most security reports should **not** be filed as a public issue.
+
+        - **Vulnerability in the catalog tooling itself** (validate.mjs,
+          build-index.mjs, the schema's escape hatches, the GitHub Actions
+          workflows, the cosign signing flow, supply-chain attacks against
+          this repo): follow [SECURITY.md](../SECURITY.md) and email the
+          security inbox.
+        - **Vulnerability in a published app** (the image, its Dockerfile,
+          its runtime behavior): report it to that app's own maintainers via
+          the contact in their listing, *not* here.
+        - **Listing that contains malware, exfiltration, or obvious abuse**:
+          use the [remove-listing](./remove-listing.yml) form, marked urgent.
+
+        This form is only for **low-severity, public-by-nature** security
+        observations — for example, "this docs page recommends a flag that
+        weakens validation" or "this regex in the schema is overly permissive
+        and could be tightened." If in doubt, email instead.
+  - type: textarea
+    id: observation
+    attributes:
+      label: What did you observe?
+      description: Be specific. Include file paths and line numbers.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What could go wrong? Who would be affected?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix (optional)
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: I have read the box at the top
+      options:
+        - label: This is a low-severity, public-by-nature observation. Anything sensitive goes to SECURITY.md.
+          required: true

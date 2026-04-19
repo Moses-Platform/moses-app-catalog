@@ -1,0 +1,68 @@
+name: Sign index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: sign-index-main
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    name: Keyless cosign signature
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: "v2.4.1"
+
+      - name: Sign index.json (keyless, OIDC -> Fulcio, record in Rekor)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          COSIGN_YES: "true"
+        run: |
+          mkdir -p signatures
+          cosign sign-blob \
+            --bundle signatures/index.json.cosign-bundle \
+            --output-signature signatures/index.json.sig \
+            --output-certificate signatures/index.json.pem \
+            index.json
+
+      - name: Verify signature locally before committing
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          REPO: ${{ github.repository }}
+        run: |
+          cosign verify-blob \
+            --bundle signatures/index.json.cosign-bundle \
+            --certificate-identity-regexp "https://github.com/${REPO}/.github/workflows/sign-index.yml@.*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            index.json
+
+      - name: Commit signature
+        run: |
+          git config user.name "moses-catalog-bot"
+          git config user.email "noreply@moses-platform.org"
+          git add signatures/index.json.sig signatures/index.json.pem signatures/index.json.cosign-bundle
+          if git diff --cached --quiet; then
+            echo "No signature changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(signatures): re-sign index.json [skip ci]"
+          git push

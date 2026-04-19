@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/schema/version.schema.json",
+  "title": "Moses App Catalog Version Entry",
+  "description": "Schema for entries in manifest.versions[] and for the per-version files under apps/<slug>/versions/<version>.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "imageDigest",
+    "appConfigURL",
+    "appConfigSHA256",
+    "mosesMinVersion",
+    "releasedAt"
+  ],
+  "properties": {
+    "version": {
+      "description": "Semantic version (https://semver.org). Pre-release and build metadata permitted.",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "imageDigest": {
+      "description": "OCI image digest. Digests only; tags are rejected because tags are mutable.",
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "imageRef": {
+      "description": "Optional human-friendly image reference (e.g. ghcr.io/org/app). Digest is the source of truth.",
+      "type": "string",
+      "maxLength": 500
+    },
+    "appConfigURL": {
+      "description": "HTTPS URL to the moses-app.config.json for this version.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 1000
+    },
+    "appConfigSHA256": {
+      "description": "Expected SHA-256 of the file at appConfigURL. Verified in CI at merge and by Moses instances on sync.",
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "mosesMinVersion": {
+      "description": "Minimum Moses platform version this app requires (semver).",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "releaseNotes": {
+      "description": "Freeform release notes, Markdown permitted. Keep under 4 KB.",
+      "type": "string",
+      "maxLength": 4096
+    },
+    "releasedAt": {
+      "description": "ISO 8601 timestamp of the release. Must be in the past.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "yanked": {
+      "description": "Set to true to mark this version as withdrawn. Moses instances will stop serving it for new installs.",
+      "type": "boolean",
+      "default": false
+    },
+    "yankedReason": {
+      "type": "string",
+      "maxLength": 500
+    }
+  }
+}

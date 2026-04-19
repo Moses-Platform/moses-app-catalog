@@ -1,0 +1,66 @@
+name: Validate PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "schema/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    name: Schema + semantic validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run schema + semantic validation
+        run: node scripts/validate.mjs
+
+      - name: Rebuild index.json (must succeed; not committed in this job)
+        run: node scripts/build-index.mjs
+
+      - name: Detect index drift
+        run: |
+          if ! git diff --quiet -- index.json; then
+            echo "index.json regenerated locally differs from committed copy."
+            echo "Maintainers will rebuild it on merge; just verify nothing unexpected changed."
+            git --no-pager diff -- index.json | head -200
+          fi
+
+  lint-yaml:
+    name: YAML lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: apps/ schema/
+          config_data: |
+            extends: default
+            rules:
+              line-length: { max: 200, level: warning }
+              document-start: disable
+              comments: { min-spaces-from-content: 1 }
+              truthy: { check-keys: false }

@@ -1,0 +1,86 @@
+name: Scheduled digest audit
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    name: Verify every published image digest still resolves
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install crane
+        run: |
+          curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.2/go-containerregistry_Linux_x86_64.tar.gz \
+            | tar -xz -C /usr/local/bin crane
+
+      - name: Audit digests across all listings
+        id: audit
+        run: |
+          set -e
+          mkdir -p /tmp/audit
+          : > /tmp/audit/failures.txt
+          node scripts/list-published-digests.mjs > /tmp/audit/work.tsv
+          while IFS=$'\t' read -r slug version digest ref; do
+            target="${ref}@${digest}"
+            if [ -z "$ref" ]; then
+              echo "skip: ${slug}@${version} has no imageRef; cannot probe"
+              continue
+            fi
+            if crane manifest "$target" >/dev/null 2>&1; then
+              echo "ok: ${slug}@${version} ${target}"
+            else
+              echo "FAIL: ${slug}@${version} ${target}"
+              echo "${slug}@${version} ${target}" >> /tmp/audit/failures.txt
+            fi
+          done < /tmp/audit/work.tsv
+          if [ -s /tmp/audit/failures.txt ]; then
+            echo "found_failures=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open issue on failure
+        if: steps.audit.outputs.found_failures == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const failures = fs.readFileSync('/tmp/audit/failures.txt', 'utf8').trim();
+            const today = new Date().toISOString().slice(0, 10);
+            const body = [
+              '`scheduled-digest-audit` could not resolve one or more image digests.',
+              '',
+              'Affected listings:',
+              '```',
+              failures,
+              '```',
+              '',
+              'Possible causes: registry rotated, image GC\'d, registry offline, network blip.',
+              'If a listing image is gone for good, yank the affected version (yanked: true) per CONTRIBUTING.md.'
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Digest audit failure ${today}`,
+              labels: ['security', 'audit'],
+              body
+            });

@@ -1,0 +1,52 @@
+name: Bug in a listing
+description: Report incorrect metadata, broken links, or runtime issues with a published listing.
+title: "[bug] <slug>: <short description>"
+labels: ["bug", "listing"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to report problems with a **published** catalog entry —
+        wrong description, broken `repositoryUrl`, image digest that 404s,
+        screenshot URLs that no longer load, etc. For problems with the app
+        itself (crashes, missing features), please open the issue against
+        the app's own repository instead.
+  - type: input
+    id: slug
+    attributes:
+      label: Listing slug
+      description: The directory name under `apps/`. Example: `awesome-tool`.
+      placeholder: my-app-slug
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version (if applicable)
+      description: Which `versions[].version` is affected? Leave blank if it's a metadata-level bug.
+      placeholder: 1.2.3
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What is wrong?
+      description: Be specific. URLs, exact error messages, what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: how-reproduced
+    attributes:
+      label: How did you find it?
+      description: |
+        Did the manifest fail to validate? Did a Moses instance refuse to install?
+        Did you try to fetch the image and get a 404? Be concrete.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I've checked that this is not already reported in an open issue.
+          required: true
+        - label: I'm reporting a *catalog metadata* bug, not an app runtime bug.
+          required: true

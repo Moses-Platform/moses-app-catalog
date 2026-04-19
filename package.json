@@ -1,0 +1,20 @@
+{
+  "name": "moses-app-catalog",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Public catalog of Moses apps. Metadata only; no runtime code.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "build-index": "node scripts/build-index.mjs",
+    "test": "npm run validate && npm run build-index"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.5.1"
+  }
+}

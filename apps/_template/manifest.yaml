@@ -1,0 +1,190 @@
+# =============================================================================
+# moses-app-catalog manifest template
+#
+# Copy this whole directory:
+#   cp -R apps/_template apps/your-app-slug
+# Then edit every TODO. Comments stay; keep them — reviewers and your future
+# self will both thank you. CI rejects this file unchanged.
+#
+# Schema reference:  ../../schema/manifest.schema.json
+# Field-by-field design notes are in CONTRIBUTING.md.
+# =============================================================================
+
+# Manifest schema version. Bump only when this repo's schema does.
+schemaVersion: 1
+
+# Globally unique slug. MUST equal the directory name under apps/.
+# Lowercase, must start with a letter, alphanumerics + - + _, max 100 chars.
+# This becomes the platform-side `tool_key` and the Helm release name, so
+# stick to Helm-release-name conventions: short, lowercase, no spaces.
+toolKey: TODO-your-app-slug                            # e.g. awesome-tool
+
+# Human-readable name shown in the App Store UI grid and detail page.
+displayName: TODO Display Name                         # e.g. "Awesome Tool"
+
+# Short description (max 1000 chars). This is what users see on the listing
+# card. Lead with what the app *does*, not who built it.
+description: |
+  TODO one to three sentences describing what this app does and the single
+  problem it solves. Avoid marketing copy; reviewers will reject it.
+
+# Long description (optional, max 5000 chars). Renders on the detail page
+# under the screenshots. Markdown allowed.
+longDescription: |
+  TODO Optional. Use this for screenshots-narrative, feature list, links to
+  blog posts, comparison with similar tools, etc. If you have nothing more
+  to say than the short description, leave this out — empty long descriptions
+  look unfinished.
+
+# --- Source repository -------------------------------------------------------
+# Choose ONE of the two sub-blocks below.
+#
+# Open source (Path A or Path B): set repositoryType to github or gitlab and
+# fill repositoryUrl. Delete the closed-source block.
+#
+# Closed source (Path C): set repositoryType to oci, delete repositoryUrl,
+# and fill in helmChartRef + helmChartVersion + the trust block at the
+# bottom. See CONTRIBUTING.md § Path C.
+# -----------------------------------------------------------------------------
+repositoryType: github                                 # github | gitlab | oci
+repositoryUrl: https://github.com/TODO/your-app        # public HTTPS URL
+defaultBranch: main                                    # informational only
+
+# Closed-source only: uncomment and fill these. Then delete repositoryUrl above.
+# helmChartRef: oci://ghcr.io/TODO/your-app-chart
+# helmChartVersion: 1.0.0
+
+# --- Categorization ----------------------------------------------------------
+
+# Top-level category. Pick one of: productivity, developer-tools, data,
+# analytics, communication, devops, security, ai, content, other.
+# (No enforced enum yet; reviewers will normalize.)
+category: TODO-category
+
+# Freeform tags. Max 10, each max 50 chars, lowercase + digits + hyphens.
+tags:
+  - TODO-tag-one
+  - TODO-tag-two
+
+# --- Build / deploy hints ----------------------------------------------------
+
+# Path to the Dockerfile inside the source repo. Default: Dockerfile.
+# Only meaningful for repositoryType=github|gitlab.
+dockerfilePath: Dockerfile
+
+# Docker build context. Default: repo root.
+buildContext: .
+
+# Optional path to a Helm chart inside the source repo. If omitted, Moses
+# generates a default chart from `appType` and the OpenAPI spec (if any).
+# Only meaningful for repositoryType=github|gitlab. Path C uses helmChartRef.
+# helmChartPath: deploy/chart
+
+# Shape of the deployed app. Drives Moses's default routing + chart.
+#   frontend  – static files served via nginx / SPA
+#   api       – HTTP API service, headless
+#   hybrid    – Both: an SPA front-end calling its own back-end
+appType: hybrid                                        # frontend | api | hybrid
+
+# --- Visual assets -----------------------------------------------------------
+
+# Square icon. SVG strongly preferred. PNG must be at least 128x128 if used.
+# Either commit an icon.svg in this directory and reference it via a raw
+# GitHub URL OR host it externally. Don't commit PNGs — they bloat git.
+iconUrl: https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/apps/TODO-your-app-slug/icon.svg
+
+# Up to 5 screenshot URLs. Hosted externally — never committed here.
+# Recommended: 1280x800 PNG/JPG, hosted on the app's own repo or S3-style bucket.
+screenshotUrls:
+  - https://TODO-your-host/screenshot-1.png
+  - https://TODO-your-host/screenshot-2.png
+
+# Public docs URL. Optional but strongly recommended for non-trivial apps.
+documentationUrl: https://TODO-your-docs.example.com
+
+# --- Maintainers -------------------------------------------------------------
+# At least one with role: owner. The owner is the person reviewers email when
+# something is wrong. The github handle (if provided) is what shows up in
+# CODEOWNERS for this listing.
+
+maintainers:
+  - github: TODO-owner-handle
+    email: TODO-owner@example.com
+    role: owner
+  # - github: TODO-contributor-handle
+  #   role: contributor
+
+# --- Policy ------------------------------------------------------------------
+
+policy:
+  # SPDX identifier (https://spdx.org/licenses/). Use "Proprietary" for
+  # closed-source listings (Path C).
+  license: TODO-SPDX-identifier                        # e.g. MIT, Apache-2.0
+  privacyPolicy: https://TODO-your-host/privacy
+  termsOfService: https://TODO-your-host/terms
+  # Email address OR HTTPS URL where users can reach you for support.
+  supportContact: TODO-support@example.com
+
+# --- Monetization ------------------------------------------------------------
+# `free` is the default. For any paid model you must populate
+# licenseServerListingId and licenseServerSellerId — these are issued by the
+# Moses license server when you register as a seller.
+
+monetization:
+  model: free                                          # free|one_time|subscription|seat_based
+  # licenseServerListingId: 00000000-0000-0000-0000-000000000000
+  # licenseServerSellerId:  00000000-0000-0000-0000-000000000000
+
+# --- Versions ----------------------------------------------------------------
+# At least one entry. Newest LAST. Each entry has a sibling per-version file
+# at versions/<version>.yaml — the two stay in lockstep (CI checks).
+#
+# imageDigest is REQUIRED and MUST be a real `sha256:` digest from a public
+# OCI registry. Tags are rejected because tags mutate. Don't ship a placeholder.
+#
+# appConfigURL must point at the moses-app.config.json file for this version,
+# typically committed to the source repo at a tagged URL (so it doesn't move).
+# appConfigSHA256 is the SHA-256 of the bytes at that URL. CI re-fetches and
+# verifies on PR; Moses instances re-verify on sync.
+
+versions:
+  - version: 0.1.0
+    imageDigest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    imageRef: ghcr.io/TODO/your-app                    # optional, for human readability
+    appConfigURL: https://raw.githubusercontent.com/TODO/your-app/v0.1.0/moses-app.config.json
+    appConfigSHA256: sha256:0000000000000000000000000000000000000000000000000000000000000000
+    mosesMinVersion: 0.1.0
+    releasedAt: 2026-04-19T00:00:00Z
+    releaseNotes: |
+      First public release.
+    # yanked: false
+    # yankedReason: "..."
+
+# --- Trust block (Path C / closed-source ONLY) -------------------------------
+# Delete this block entirely if you are using Path A or Path B.
+# See CONTRIBUTING.md § Path C for what reviewers expect here.
+#
+# trust:
+#   statement: |
+#     We are TODO Inc., publishers of TODO Product, in production at TODO.
+#     Source for this app is closed because TODO. Our prior public work in
+#     the Moses ecosystem includes TODO and TODO.
+#   vouchedBy:
+#     - TODO-recognized-contributor-handle-1
+#     - TODO-recognized-contributor-handle-2
+#   distributionType: commercial            # proprietary-binary | helm-only | commercial
+#   priorWork:
+#     - https://github.com/moses-platform/moses-app-catalog/pull/TODO
+#     - https://github.com/your-org/your-public-project
+
+# --- Server-managed fields ---------------------------------------------------
+# Do NOT populate the following — they're written by CI on merge or maintained
+# locally by each Moses instance. Listed here so submitters know to leave
+# them out.
+#
+#   signing:                       # CI on merge: signedAt, signedBy, keyId
+#
+# Platform-local (per-instance, NEVER catalog):
+#   submitted_by, submitted_at, reviewed_by, reviewed_at, review_notes,
+#   status, install_count, rating_avg, rating_count, is_featured, is_default,
+#   featured_order
