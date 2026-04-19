@@ -54,7 +54,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: ibiqlik/action-yamllint@v3
+      # SHA-pinned to v3 (commit 2576378). Update SHA + tag comment in lockstep.
+      - uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3
         with:
           file_or_dir: apps/ schema/
           config_data: |

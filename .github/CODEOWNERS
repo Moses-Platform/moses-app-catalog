@@ -8,6 +8,15 @@
 #   (security/compliance review) and the listing's own maintainers (technical
 #   accuracy). The per-listing CODEOWNERS line below is added when a listing
 #   is first merged.
+#
+# Bootstrap status (delete this block once the org + team are live):
+# The team handle `@moses-platform/catalog-maintainers` is the *intended*
+# owner. Until the `moses-platform` GitHub org and the `catalog-maintainers`
+# team exist with the bootstrap maintainers added, GitHub treats this file as
+# inert and no reviewer is auto-requested. Before flipping this repo public,
+# either (a) create the org/team and add the bootstrap maintainers, or
+# (b) replace every `@moses-platform/catalog-maintainers` line below with
+# the comma-separated bootstrap maintainer handles.
 
 # Default owner — every PR touching anything not otherwise matched goes to
 # the catalog maintainers.

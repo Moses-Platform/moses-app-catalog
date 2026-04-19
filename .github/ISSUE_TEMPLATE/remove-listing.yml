@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Removal is a governance action. See
-        [GOVERNANCE.md § Delisting](../GOVERNANCE.md#delisting) for the full
+        [GOVERNANCE.md § Delisting](https://github.com/moses-platform/moses-app-catalog/blob/main/GOVERNANCE.md#delisting) for the full
         process and the criteria reviewers will apply. Use this form for:
 
         - A listing maintainer voluntarily delisting their own app
@@ -16,7 +16,7 @@ body:
         - A request to yank a specific published version
 
         For sensitive security reports, do **not** open a public issue —
-        follow [SECURITY.md](../SECURITY.md) instead.
+        follow [SECURITY.md](https://github.com/moses-platform/moses-app-catalog/blob/main/SECURITY.md) instead.
   - type: input
     id: slug
     attributes:

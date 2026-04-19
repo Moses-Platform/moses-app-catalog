@@ -64,8 +64,19 @@
       "default": false
     },
     "yankedReason": {
+      "description": "Required when yanked=true. One- or two-sentence explanation visible to instance operators on sync.",
       "type": "string",
+      "minLength": 10,
       "maxLength": 500
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "yanked": { "const": true } },
+        "required": ["yanked"]
+      },
+      "then": { "required": ["yankedReason"] }
+    }
+  ]
 }

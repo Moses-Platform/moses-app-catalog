@@ -1,0 +1,110 @@
+# Rebuild index.json and keyless-cosign-sign it in a single workflow run.
+#
+# Why one workflow instead of two:
+#   - GitHub default GITHUB_TOKEN does NOT trigger downstream workflow runs
+#     for commits it pushes. A two-workflow chain (build-index commits
+#     index.json, sign-index triggers on index.json push) silently never
+#     fires the second stage.
+#   - One workflow with one terminal push avoids the chain and keeps the
+#     committed index always paired with a fresh signature.
+#
+# Branch protection assumption:
+#   This workflow pushes to main using the default GITHUB_TOKEN. If branch
+#   protection on main blocks the bot, see CONTRIBUTING.md section
+#   "Branch protection" for the supported configurations.
+
+name: Rebuild and sign index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "schema/**"
+      - "scripts/build-index.mjs"
+      - "scripts/list-published-digests.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: rebuild-and-sign-main
+  cancel-in-progress: false
+
+jobs:
+  rebuild-and-sign:
+    name: Rebuild + cosign sign + commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate before building
+        run: node scripts/validate.mjs
+
+      - name: Rebuild index.json
+        run: node scripts/build-index.mjs
+
+      - name: Detect index changes
+        id: index_changed
+        run: |
+          if git diff --quiet -- index.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "index.json unchanged; nothing to sign or commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install cosign
+        if: steps.index_changed.outputs.changed == 'true'
+        # SHA-pinned to v3 (commit 398d4b0). Update SHA + tag comment in lockstep.
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: "v2.4.1"
+
+      - name: Sign index.json (keyless OIDC, Fulcio cert, Rekor entry)
+        if: steps.index_changed.outputs.changed == 'true'
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          COSIGN_YES: "true"
+        run: |
+          mkdir -p signatures
+          cosign sign-blob \
+            --bundle signatures/index.json.cosign-bundle \
+            index.json
+
+      - name: Verify signature locally before committing
+        if: steps.index_changed.outputs.changed == 'true'
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          REPO: ${{ github.repository }}
+        run: |
+          cosign verify-blob \
+            --bundle signatures/index.json.cosign-bundle \
+            --certificate-identity-regexp "^https://github\.com/${REPO}/\.github/workflows/rebuild-and-sign\.yml@refs/heads/main$" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            index.json
+
+      - name: Commit index + signature
+        if: steps.index_changed.outputs.changed == 'true'
+        run: |
+          git config user.name "moses-catalog-bot"
+          git config user.email "noreply@moses-platform.org"
+          git add index.json signatures/index.json.cosign-bundle
+          git commit -m "chore(index): rebuild + sign index.json"
+          git push

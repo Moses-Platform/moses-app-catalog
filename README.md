@@ -61,12 +61,22 @@ actual implementation lives in the platform repo):
 
 ```text
 GET https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/index.json
-GET https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/signatures/index.json.sig
-cosign verify-blob --certificate-identity-regexp '.+@github\.com' \
-                   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-                   --signature signatures/index.json.sig index.json
+GET https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/signatures/index.json.cosign-bundle
+
+# Anchor the identity regex tightly: it must match THIS repo, THIS workflow,
+# on the main branch. A laxer regex (e.g. '.+@github\.com') would accept
+# signatures from any GitHub Actions workflow and is actively unsafe.
+cosign verify-blob \
+  --certificate-identity-regexp '^https://github\.com/moses-platform/moses-app-catalog/\.github/workflows/rebuild-and-sign\.yml@refs/heads/main$' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  --bundle signatures/index.json.cosign-bundle \
+  index.json
 # upsert each entry into community_marketplace_tools
 ```
+
+If you fork the catalog, substitute your fork's `<org>/<repo>` into the
+identity regex — otherwise verification correctly fails because the signing
+identity will be your fork's workflow, not this one.
 
 The sync service is not yet wired up in the platform (see
 [platform epic tracking](https://github.com/moses-platform/moses-platform-prep)).

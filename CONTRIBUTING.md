@@ -373,7 +373,7 @@ externally, etc.) still apply.
 - It is **not** a path to a private listing. Every app listed in this repo
   appears in every Moses instance's public App Store. There is no private
   registry feature in the catalog; if you need that, run a private catalog
-  against your own instance (see GOVERNANCE.md § Private forks).
+  against your own instance (see [GOVERNANCE.md § Forking](GOVERNANCE.md#forking)).
 
 ## Shared checklist (all paths)
 
@@ -396,17 +396,41 @@ Every submission, regardless of path, must satisfy:
 
 ## What happens after merge
 
-1. `build-index.yml` regenerates `index.json` and commits it back to `main`
-   with `[skip ci]`.
-2. `sign-index.yml` produces a keyless cosign signature of `index.json` (OIDC
-   from GitHub Actions, signed cert from Fulcio, record in Rekor). The
-   signature lands at `signatures/index.json.sig`.
-3. Moses instances on their ~6h sync schedule pull both files, verify the
+1. `rebuild-and-sign.yml` runs on `main`: regenerates `index.json`, and if it
+   changed, produces a keyless cosign signature (OIDC from GitHub Actions,
+   signed cert from Fulcio, record in Rekor). Both the regenerated index and
+   the signature bundle (`signatures/index.json.cosign-bundle`) are committed
+   in a single push so they never drift apart.
+2. Moses instances on their ~6h sync schedule pull both files, verify the
    signature, and upsert your entry into their `community_marketplace_tools`
    table.
-4. Users of those Moses instances see your app in their App Store. The
+3. Users of those Moses instances see your app in their App Store. The
    per-instance `install_count`, `rating_avg`, and `is_featured` fields are
    maintained locally by each instance and **never** by the catalog.
+
+### Branch protection
+
+`rebuild-and-sign.yml` pushes to `main` using the default `GITHUB_TOKEN`. By
+default that token cannot bypass branch protection. Maintainers must pick one
+of the following supported configurations before turning the repo public:
+
+- **Allow-list the GitHub Actions bot.** Under
+  *Settings → Branches → Branch protection rules → main*, add
+  `github-actions[bot]` (and any deploy-bot used by maintainers) to the
+  *"Allow specified actors to bypass required pull requests"* list. This is
+  the recommended setup: human PRs still require review, but the catalog
+  workflow can land its index/signature commits.
+- **Use a GitHub App / PAT for the workflow push.** Replace the workflow's
+  `secrets.GITHUB_TOKEN` with an App token whose installation is excepted
+  from branch protection. Heavier to set up; useful when org policy forbids
+  bot bypass at the repo level.
+- **Leave `main` unprotected** and rely on CODEOWNERS-driven review for
+  human PRs. Simplest, but loses defense against a maintainer accidentally
+  pushing to `main` directly.
+
+Without one of these, the first `apps/**` change after going public will
+merge fine, the workflow will fail at the `git push` step, and the public
+`index.json` + signature will silently fall behind.
 
 ## Updating an existing listing
 

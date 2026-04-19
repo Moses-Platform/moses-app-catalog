@@ -125,10 +125,10 @@
       "pattern": "^oci://[a-z0-9.-]+(?::[0-9]+)?/[a-z0-9][a-z0-9._/-]*$"
     },
     "helmChartVersion": {
-      "description": "Chart version tag/SemVer to pair with helmChartRef. Required alongside helmChartRef; a chart reference without a pinned version is rejected because tags are mutable.",
+      "description": "Chart version tag/SemVer to pair with helmChartRef. Required alongside helmChartRef; a chart reference without a pinned version is rejected because tags are mutable. A leading 'v' is permitted (many chart registries publish as 'v1.2.3').",
       "type": "string",
       "maxLength": 100,
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+      "pattern": "^v?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
     "appType": {
       "description": "Shape of the deployed app.",

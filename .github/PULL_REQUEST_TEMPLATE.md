@@ -22,8 +22,8 @@ human attention.
 
 ## Checklist
 
-- [ ] I've read [CONTRIBUTING.md](../CONTRIBUTING.md) and the
-      [Shared checklist](../CONTRIBUTING.md#shared-checklist-all-paths).
+- [ ] I've read [CONTRIBUTING.md](https://github.com/moses-platform/moses-app-catalog/blob/main/CONTRIBUTING.md) and the
+      [Shared checklist](https://github.com/moses-platform/moses-app-catalog/blob/main/CONTRIBUTING.md#shared-checklist-all-paths).
 - [ ] `make test` passes locally.
 - [ ] `toolKey` matches the directory name under `apps/`.
 - [ ] All `imageDigest` values are real `sha256:` digests from a public OCI

@@ -13,7 +13,7 @@ body:
         - **Vulnerability in the catalog tooling itself** (validate.mjs,
           build-index.mjs, the schema's escape hatches, the GitHub Actions
           workflows, the cosign signing flow, supply-chain attacks against
-          this repo): follow [SECURITY.md](../SECURITY.md) and email the
+          this repo): follow [SECURITY.md](https://github.com/moses-platform/moses-app-catalog/blob/main/SECURITY.md) and email the
           security inbox.
         - **Vulnerability in a published app** (the image, its Dockerfile,
           its runtime behavior): report it to that app's own maintainers via
