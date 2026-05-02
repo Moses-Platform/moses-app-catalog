@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/schema/manifest.schema.json",
   "title": "Moses App Catalog Manifest",
-  "description": "Schema for apps/<slug>/manifest.yaml in the moses-app-catalog repo. Fields map 1:1 onto the community_marketplace_tools table in the Moses platform so that Moses instances can perform a simple upsert on sync.",
+  "description": "Schema for apps/<category>/<subcategory>/<slug>/manifest.yaml in the moses-app-catalog repo. Git-native model: apps are referenced by upstream Git repo + tag + commit SHA. Moses instances clone this catalog, then build each app from its source repository per cluster.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,13 +10,13 @@
     "toolKey",
     "displayName",
     "description",
-    "repositoryType",
-    "category",
     "appType",
+    "category",
+    "subcategory",
+    "repositoryType",
+    "repositoryUrl",
     "maintainers",
-    "policy",
-    "monetization",
-    "versions"
+    "policy"
   ],
   "properties": {
     "schemaVersion": {
@@ -25,31 +25,50 @@
       "enum": [1]
     },
     "toolKey": {
-      "description": "Globally unique slug. Must equal the parent directory name under apps/. Lowercase, must start with a letter, alphanumerics, hyphens, and underscores only.",
+      "description": "Globally unique slug. Must equal the parent directory name under apps/<category>/<subcategory>/. Lowercase, must start with a letter, alphanumerics, hyphens, and underscores only.",
       "type": "string",
       "minLength": 2,
       "maxLength": 100,
       "pattern": "^[a-z][a-z0-9_-]{1,99}$"
     },
     "displayName": {
-      "description": "Human-readable name shown in the App Store UI.",
+      "description": "Human-readable name shown in the Marketplace UI.",
       "type": "string",
       "minLength": 2,
-      "maxLength": 255
+      "maxLength": 80
     },
     "description": {
-      "description": "Short description (shown in listing cards). Max 1000 chars to match backend validator.",
+      "description": "Short description shown on listing cards and the detail page.",
       "type": "string",
       "minLength": 10,
       "maxLength": 1000
     },
-    "longDescription": {
-      "description": "Long-form description (shown on detail page). Max 5000 chars to match backend validator.",
+    "appType": {
+      "description": "Shape of the deployed app.",
       "type": "string",
-      "maxLength": 5000
+      "enum": ["frontend", "api", "hybrid"]
+    },
+    "category": {
+      "description": "Top-level category key. MUST match a key under `categories:` in categories.yaml.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 30,
+      "pattern": "^[a-z][a-z0-9-]{1,29}$"
+    },
+    "subcategory": {
+      "description": "Subcategory key. MUST match a key under the chosen category in categories.yaml.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 30,
+      "pattern": "^[a-z][a-z0-9-]{1,29}$"
+    },
+    "repositoryType": {
+      "description": "Source hosting. Both choices require a public repositoryUrl.",
+      "type": "string",
+      "enum": ["github", "gitlab"]
     },
     "repositoryUrl": {
-      "description": "Public HTTPS URL to the source repository. Required when repositoryType is github or gitlab. Omit for closed-source listings (repositoryType=oci).",
+      "description": "Public HTTPS URL to the source repository. Moses clones this URL per cluster to build the app.",
       "type": "string",
       "format": "uri",
       "maxLength": 500,
@@ -67,102 +86,15 @@
         ]
       }
     },
-    "repositoryType": {
-      "description": "Source hosting. 'github' and 'gitlab' require a public repositoryUrl. 'oci' is for closed-source listings where only the image + manifest + Helm chart are published; such listings require a populated 'trust' block and established-contributor vouching.",
-      "type": "string",
-      "enum": ["github", "gitlab", "oci"]
-    },
-    "defaultBranch": {
-      "description": "Default branch name (informational; images are pinned to digests, not branches).",
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100,
-      "default": "main"
-    },
-    "category": {
-      "description": "Top-level category slug. Keep short and human-readable.",
-      "type": "string",
-      "minLength": 2,
-      "maxLength": 100
-    },
-    "tags": {
-      "description": "Freeform tags. Max 10, each max 50 chars, to match backend validator.",
-      "type": "array",
-      "maxItems": 10,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 50,
-        "pattern": "^[a-z0-9][a-z0-9-]{0,49}$"
-      },
-      "default": []
-    },
-    "dockerfilePath": {
-      "description": "Path to Dockerfile relative to repo root.",
-      "type": "string",
-      "maxLength": 500,
-      "default": "Dockerfile",
-      "not": { "pattern": "\\.\\." }
-    },
-    "buildContext": {
-      "description": "Docker build context relative to repo root.",
-      "type": "string",
-      "maxLength": 500,
-      "default": ".",
-      "not": { "pattern": "\\.\\." }
-    },
-    "helmChartPath": {
-      "description": "Optional path to a Helm chart inside the source repo. Only meaningful when repositoryType is github or gitlab. If unset, Moses generates a default chart.",
-      "type": "string",
-      "maxLength": 500,
-      "not": { "pattern": "\\.\\." }
-    },
-    "helmChartRef": {
-      "description": "OCI reference to a published Helm chart (e.g. 'oci://ghcr.io/vendor/app-chart'). Required for closed-source (repositoryType=oci) listings where no public source repo is available. Must be a public registry; authenticated pulls are not supported by Moses instances on sync.",
-      "type": "string",
-      "maxLength": 500,
-      "pattern": "^oci://[a-z0-9.-]+(?::[0-9]+)?/[a-z0-9][a-z0-9._/-]*$"
-    },
-    "helmChartVersion": {
-      "description": "Chart version tag/SemVer to pair with helmChartRef. Required alongside helmChartRef; a chart reference without a pinned version is rejected because tags are mutable. A leading 'v' is permitted (many chart registries publish as 'v1.2.3').",
-      "type": "string",
-      "maxLength": 100,
-      "pattern": "^v?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
-    },
-    "appType": {
-      "description": "Shape of the deployed app.",
-      "type": "string",
-      "enum": ["frontend", "api", "hybrid"]
-    },
     "iconUrl": {
-      "description": "HTTPS URL to a square icon (SVG preferred, PNG >=128px acceptable). Must be publicly accessible without auth.",
-      "type": "string",
-      "format": "uri",
-      "maxLength": 500,
-      "pattern": "^https://"
-    },
-    "screenshotUrls": {
-      "description": "HTTPS URLs to screenshots. Max 5 to match backend validator.",
-      "type": "array",
-      "maxItems": 5,
-      "uniqueItems": true,
-      "items": {
-        "type": "string",
-        "format": "uri",
-        "pattern": "^https://"
-      },
-      "default": []
-    },
-    "documentationUrl": {
-      "description": "Public docs URL.",
+      "description": "Optional HTTPS URL to a square icon (SVG preferred, PNG >=128px acceptable). Typically pinned to a specific commit (e.g. raw.githubusercontent.com/<org>/<repo>/<commit>/icon.svg).",
       "type": "string",
       "format": "uri",
       "maxLength": 500,
       "pattern": "^https://"
     },
     "maintainers": {
-      "description": "People responsible for this listing. At least one owner required.",
+      "description": "People responsible for this listing. At least one with role: owner is required.",
       "type": "array",
       "minItems": 1,
       "maxItems": 10,
@@ -172,6 +104,7 @@
         "required": ["role"],
         "anyOf": [
           { "required": ["github"] },
+          { "required": ["gitlab"] },
           { "required": ["email"] }
         ],
         "properties": {
@@ -180,8 +113,13 @@
             "type": "string",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
           },
+          "gitlab": {
+            "description": "GitLab username (without @).",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$"
+          },
           "email": {
-            "description": "Contact email. Kept for maintainer correspondence; not rendered in the public App Store UI.",
+            "description": "Contact email. Kept for maintainer correspondence; not rendered in the public Marketplace UI.",
             "type": "string",
             "format": "email",
             "maxLength": 320
@@ -205,162 +143,15 @@
     "policy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["license", "supportContact"],
+      "required": ["license"],
       "properties": {
         "license": {
           "description": "SPDX license identifier for the app source code (see https://spdx.org/licenses/).",
           "type": "string",
           "minLength": 1,
           "maxLength": 100
-        },
-        "privacyPolicy": {
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https://",
-          "maxLength": 500
-        },
-        "termsOfService": {
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https://",
-          "maxLength": 500
-        },
-        "supportContact": {
-          "description": "Email address or HTTPS URL where users can reach the maintainer.",
-          "type": "string",
-          "maxLength": 500,
-          "oneOf": [
-            { "format": "email" },
-            { "pattern": "^https://" }
-          ]
         }
-      }
-    },
-    "monetization": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["model"],
-      "properties": {
-        "model": {
-          "type": "string",
-          "enum": ["free", "one_time", "subscription", "seat_based"]
-        },
-        "licenseServerListingId": {
-          "description": "UUID identifying this app's listing in the Moses license server. Required for any paid model.",
-          "type": "string",
-          "format": "uuid"
-        },
-        "licenseServerSellerId": {
-          "description": "UUID of the seller account in the Moses license server.",
-          "type": "string",
-          "format": "uuid"
-        }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "model": { "const": "free" } } },
-          "then": {
-            "not": {
-              "anyOf": [
-                { "required": ["licenseServerListingId"] },
-                { "required": ["licenseServerSellerId"] }
-              ]
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "model": { "enum": ["one_time", "subscription", "seat_based"] }
-            }
-          },
-          "then": {
-            "required": ["licenseServerListingId", "licenseServerSellerId"]
-          }
-        }
-      ]
-    },
-    "versions": {
-      "description": "Released versions, newest last. At least one required.",
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 100,
-      "items": {
-        "$ref": "version.schema.json"
-      }
-    },
-    "trust": {
-      "description": "Required for closed-source listings (repositoryType=oci). Establishes the maintainer's reputation and distribution terms so reviewers can make a trust decision without a public source repo.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["statement", "vouchedBy", "distributionType"],
-      "properties": {
-        "statement": {
-          "description": "Freeform markdown statement from the maintainer explaining who they are, why the code is closed-source, and what existing Moses/open-source work they have shipped that reviewers can use to assess trust. Typically 200-2000 chars.",
-          "type": "string",
-          "minLength": 100,
-          "maxLength": 4000
-        },
-        "vouchedBy": {
-          "description": "GitHub handles of at least two existing moses-app-catalog maintainers or established moses-platform contributors who have reviewed the submission and are vouching for the submitter. Handles are verified against the catalog CODEOWNERS and platform contributor lists.",
-          "type": "array",
-          "minItems": 2,
-          "maxItems": 10,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
-          }
-        },
-        "distributionType": {
-          "description": "How the app's runtime is distributed. 'proprietary-binary' means only the built image ships publicly. 'helm-only' means a Helm chart + image ship publicly but source does not. 'commercial' means a paid proprietary product.",
-          "type": "string",
-          "enum": ["proprietary-binary", "helm-only", "commercial"]
-        },
-        "priorWork": {
-          "description": "Optional links to prior moses-platform, moses-app-catalog, or public open-source work by the submitter that reviewers can reference.",
-          "type": "array",
-          "maxItems": 10,
-          "items": {
-            "type": "string",
-            "format": "uri",
-            "pattern": "^https://"
-          }
-        }
-      }
-    },
-    "signing": {
-      "description": "Populated by CI on merge. Submitters should leave this block out.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "signedAt": { "type": "string", "format": "date-time" },
-        "signedBy": { "type": "string", "maxLength": 255 },
-        "keyId":    { "type": "string", "maxLength": 255 }
       }
     }
-  },
-  "allOf": [
-    {
-      "if": {
-        "properties": { "repositoryType": { "enum": ["github", "gitlab"] } },
-        "required": ["repositoryType"]
-      },
-      "then": { "required": ["repositoryUrl"] }
-    },
-    {
-      "if": {
-        "properties": { "repositoryType": { "const": "oci" } },
-        "required": ["repositoryType"]
-      },
-      "then": {
-        "required": ["trust", "helmChartRef", "helmChartVersion"],
-        "not": { "required": ["repositoryUrl"] }
-      }
-    },
-    {
-      "if": { "required": ["helmChartRef"] },
-      "then": { "required": ["helmChartVersion"] }
-    }
-  ]
+  }
 }

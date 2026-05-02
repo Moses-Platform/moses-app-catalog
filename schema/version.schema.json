@@ -2,45 +2,32 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/schema/version.schema.json",
   "title": "Moses App Catalog Version Entry",
-  "description": "Schema for entries in manifest.versions[] and for the per-version files under apps/<slug>/versions/<version>.yaml.",
+  "description": "Per-version file at apps/<category>/<subcategory>/<slug>/versions/<tag>.yaml. The filename literally equals the `tag` field. Tag + commit SHA together pin the exact source state Moses will build from.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "version",
-    "imageDigest",
-    "appConfigURL",
-    "appConfigSHA256",
-    "mosesMinVersion",
-    "releasedAt"
+    "tag",
+    "commit",
+    "releasedAt",
+    "mosesMinVersion"
   ],
   "properties": {
-    "version": {
-      "description": "Semantic version (https://semver.org). Pre-release and build metadata permitted.",
+    "tag": {
+      "description": "Literal git tag in the upstream repo. Include the leading 'v' if upstream uses it (e.g. 'v1.2.3'); use bare semver if upstream does not. The per-version filename MUST equal this string with a `.yaml` suffix.",
       "type": "string",
+      "minLength": 1,
       "maxLength": 100,
-      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,99}$"
     },
-    "imageDigest": {
-      "description": "OCI image digest. Digests only; tags are rejected because tags are mutable.",
+    "commit": {
+      "description": "40-character lowercase hex SHA that the upstream tag resolves to. Load-bearing pin: the validator clones the source repo at the declared tag and rejects the listing if `git rev-parse <tag>` does not match this value.",
       "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
+      "pattern": "^[0-9a-f]{40}$"
     },
-    "imageRef": {
-      "description": "Optional human-friendly image reference (e.g. ghcr.io/org/app). Digest is the source of truth.",
+    "releasedAt": {
+      "description": "RFC3339 timestamp of the release. Both UTC 'Z' suffix and explicit offsets are accepted.",
       "type": "string",
-      "maxLength": 500
-    },
-    "appConfigURL": {
-      "description": "HTTPS URL to the moses-app.config.json for this version.",
-      "type": "string",
-      "format": "uri",
-      "pattern": "^https://",
-      "maxLength": 1000
-    },
-    "appConfigSHA256": {
-      "description": "Expected SHA-256 of the file at appConfigURL. Verified in CI at merge and by Moses instances on sync.",
-      "type": "string",
-      "pattern": "^sha256:[a-f0-9]{64}$"
+      "format": "date-time"
     },
     "mosesMinVersion": {
       "description": "Minimum Moses platform version this app requires (semver).",
@@ -49,17 +36,12 @@
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
     "releaseNotes": {
-      "description": "Freeform release notes, Markdown permitted. Keep under 4 KB.",
+      "description": "Freeform release notes, Markdown permitted.",
       "type": "string",
-      "maxLength": 4096
-    },
-    "releasedAt": {
-      "description": "ISO 8601 timestamp of the release. Must be in the past.",
-      "type": "string",
-      "format": "date-time"
+      "maxLength": 5000
     },
     "yanked": {
-      "description": "Set to true to mark this version as withdrawn. Moses instances will stop serving it for new installs.",
+      "description": "Set to true to mark this version as withdrawn. Moses instances will stop offering it for new installs.",
       "type": "boolean",
       "default": false
     },

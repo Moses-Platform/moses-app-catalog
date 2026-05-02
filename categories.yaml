@@ -1,0 +1,68 @@
+# Canonical category / subcategory allow-list for moses-app-catalog listings.
+#
+# Adding a new top-level category (or a new subcategory) requires its own PR.
+# This intentional friction prevents drift like `finance` / `finance-tools`
+# / `fintech` accumulating across listings.
+#
+# Schema:
+#   categories:
+#     <category-key>:
+#       label: "<Human-readable label>"
+#       subcategories:
+#         <subcategory-key>: "<Human-readable label>"
+#
+# Keys (top-level and subcategory) must be lowercase kebab-case, start with
+# a letter, and be 2-30 characters long. The MP-A3 validator rejects any
+# manifest whose `category` / `subcategory` is not present here.
+categories:
+  developer-tools:
+    label: "Developer Tools"
+    subcategories:
+      templates: "Project Templates"
+      cli-tools: "CLI Tools"
+      git-tools: "Git & Source Control"
+      ai-tools: "AI Tools"
+  productivity:
+    label: "Productivity"
+    subcategories:
+      notes: "Notes & Docs"
+      calendar: "Calendar & Scheduling"
+      tasks: "Tasks & Tracking"
+  data:
+    label: "Data"
+    subcategories:
+      analytics: "Analytics"
+      etl: "ETL & Pipelines"
+      databases: "Databases & Storage"
+  devops:
+    label: "DevOps"
+    subcategories:
+      ci-cd: "CI / CD"
+      monitoring: "Monitoring & Observability"
+      deployment: "Deployment & Provisioning"
+  security:
+    label: "Security"
+    subcategories:
+      scanning: "Scanning & Audit"
+      secrets: "Secrets & Vault"
+      auth: "Authentication"
+  ai:
+    label: "AI"
+    subcategories:
+      llm-tools: "LLM Tools"
+      agents: "Agents & Automation"
+  communication:
+    label: "Communication"
+    subcategories:
+      chat: "Chat & Messaging"
+      email: "Email"
+  integrations:
+    label: "Integrations"
+    subcategories:
+      crm: "CRM"
+      accounting: "Accounting"
+      misc: "Other Integrations"
+  other:
+    label: "Other"
+    subcategories:
+      misc: "Miscellaneous"

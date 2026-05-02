@@ -5,102 +5,89 @@
 > pulling from this repo yet. Expect breaking schema changes until v1.0.0.
 
 A public, decentralized catalog of apps that run on the
-[Moses platform](https://github.com/moses-platform). Each entry here describes
-one app: where its source lives, which image digest to pull, what config it
-expects, and who maintains it. Moses instances around the world fetch this
-catalog on a ~6-hour schedule and upsert approved entries into their local
-marketplace tables.
+[Moses platform](https://github.com/moses-platform). Each entry here is a
+slim, git-native pointer: the app's source repository, a tag, the commit SHA
+that tag resolves to, and the people who maintain the listing. Moses
+instances clone this catalog and use those pointers to build each app from
+source inside their own cluster.
 
 ## What this repo is
 
-- **A public manifest registry.** Every app is one directory under `apps/`
-  containing a `manifest.yaml` and per-version metadata.
+- **A public manifest registry.** Every app is one directory under
+  `apps/<category>/<subcategory>/<slug>/` containing a `manifest.yaml` and
+  one per-version file under `versions/`.
 - **Schema-governed.** All manifests are validated against
   [`schema/manifest.schema.json`](schema/manifest.schema.json) on every PR.
-- **Signed.** On merge, CI rebuilds `index.json` and [cosign-signs] it keylessly
-  via Sigstore/Fulcio. Moses instances verify the signature via the public
-  Rekor transparency log before trusting any entry.
-- **Forkable.** The catalog data is licensed CC0-1.0 (see [LICENSE.md](LICENSE.md));
-  you can mirror, filter, or replace it for your own Moses fleet.
-
-[cosign-signs]: https://docs.sigstore.dev/cosign/signing/signing_with_blobs/
+- **Git-native, build-from-source.** Listings reference an upstream Git repo
+  and a tag pinned to a commit SHA. There are no image digests, no signed
+  index, and nothing that has to be hosted alongside this repo.
+- **Forkable.** The catalog data is licensed CC0-1.0 (see
+  [LICENSE.md](LICENSE.md)); you can mirror, filter, or replace it for your
+  own Moses fleet.
 
 ## What this repo is **not**
 
-- **Not a binary mirror.** No container images, no tarballs. Manifests reference
-  OCI digests that Moses pulls from the app's own registry.
-- **Not an auth broker or license server.** Entitlement for paid apps lives in
-  the separate Moses license server; the catalog only records
-  `licenseServerListingId`.
-- **Not a telemetry endpoint.** The catalog has no idea who fetches it — that's
-  intentional.
-- **Not a personal-data store.** Maintainer contact is an owner/team email, not
-  a user identity.
+- **Not a binary mirror.** No container images, no tarballs, no Helm charts.
+  Moses builds each app from its source repository at the pinned commit.
+- **Not an auth broker or license server.** Entitlement for paid apps lives
+  in the separate Moses license server; the catalog only stores public
+  metadata.
+- **Not a telemetry endpoint.** The catalog has no idea who fetches it —
+  that's intentional.
+- **Not a personal-data store.** Maintainer contact is an owner/team email,
+  not a user identity.
+
+## How Moses fetches it
+
+Moses clones this repo into the user's `moses-git` workspace, refreshes it
+every ~6 hours, and reads each
+`apps/<category>/<subcategory>/<slug>/manifest.yaml` directly. There is no
+intermediate index file and no signature step — the cloned working tree is
+the catalog.
+
+For each listing, Moses then reads the per-version file, clones the upstream
+source repository at the declared `tag`, verifies that the tag resolves to
+the declared `commit`, and builds the image in-cluster.
 
 ## Quickstart
 
 ### As a developer publishing an app
 
-Pick one path — both end in the same PR review:
+Pick one path — both end in the same review:
 
-- **Path A — Direct GitHub PR.** Fork, copy `apps/_template/` to
-  `apps/<your-slug>/`, fill in the manifest, open a PR. CI runs schema +
-  semantic validation.
-- **Path B — Moses UI wizard.** Once implemented on the platform side
-  (see [CONTRIBUTING.md § Path B](CONTRIBUTING.md#path-b--moses-ui-publish-wizard)),
-  click **Publish to Public Catalog** in the App Store tab of your Moses
-  instance. The wizard pre-fills the manifest from your deployed
-  `workspace_tool` and opens the PR on your behalf via GitHub OAuth.
+- **Path A — Direct GitHub PR.** Copy `apps/_template/` to
+  `apps/<category>/<subcategory>/<your-slug>/`, fill in the manifest, add
+  a `LICENSE` file at the root of your source repo, and open a PR. CI runs
+  schema + semantic validation.
+- **Path B — Moses UI suggestion.** Once the platform-side wizard ships,
+  you can use the Moses Marketplace tab to send a listing in for review
+  without leaving the Moses UI.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist and review flow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist and review
+flow.
 
 ### As a Moses instance operator
 
-Moses instances fetch and verify the catalog roughly as follows (pseudocode —
-actual implementation lives in the platform repo):
-
-```text
-GET https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/index.json
-GET https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/signatures/index.json.cosign-bundle
-
-# Anchor the identity regex tightly: it must match THIS repo, THIS workflow,
-# on the main branch. A laxer regex (e.g. '.+@github\.com') would accept
-# signatures from any GitHub Actions workflow and is actively unsafe.
-cosign verify-blob \
-  --certificate-identity-regexp '^https://github\.com/moses-platform/moses-app-catalog/\.github/workflows/rebuild-and-sign\.yml@refs/heads/main$' \
-  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-  --bundle signatures/index.json.cosign-bundle \
-  index.json
-# upsert each entry into community_marketplace_tools
-```
-
-If you fork the catalog, substitute your fork's `<org>/<repo>` into the
-identity regex — otherwise verification correctly fails because the signing
-identity will be your fork's workflow, not this one.
-
-The sync service is not yet wired up in the platform (see
-[platform epic tracking](https://github.com/moses-platform/moses-platform-prep)).
+You don't need to do anything. A Moses instance refreshes its cloned copy
+of this repo on a ~6-hour schedule, reads the manifests directly out of the
+working tree, and builds each app from its own source repository. There is
+nothing to verify against an external service.
 
 ## Repository layout
 
 ```
 schema/                 JSON Schema Draft 2020-12 for manifests + versions
-apps/_template/         Copy-to-start template; not included in index.json
-apps/<slug>/            One directory per app
-index.json              Generated on merge by CI (do not hand-edit)
-signatures/             Keyless cosign signatures of index.json
+categories.yaml         Canonical category / subcategory allow-list
+apps/_template/         Copy-to-start template; not surfaced in the UI
+apps/<category>/<subcategory>/<slug>/
+                        One directory per app
 scripts/                Node 20 scripts invoked by CI and locally via `make`
 .github/                PR template, issue templates, CI workflows, CODEOWNERS
 ```
 
 ## Current catalog status
 
-Run `make test` (or `npm run test`) locally to re-run validation and rebuild
-`index.json`. In CI, the index is regenerated automatically on every merge to
-`main`.
-
-Catalog stats (from `index.json`) can be viewed directly:
-<https://raw.githubusercontent.com/moses-platform/moses-app-catalog/main/index.json>
+Run `make test` (or `npm run test`) locally to re-run validation.
 
 ## Related docs
 
@@ -113,7 +100,7 @@ Catalog stats (from `index.json`) can be viewed directly:
 
 - Source code in this repo (scripts, workflows, schemas) is MIT, per the
   existing [LICENSE.md](LICENSE.md).
-- Catalog metadata (anything under `apps/`, `index.json`, and per-version YAML)
-  is released under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/)
-  so third parties can mirror and remix it freely. This duality is intentional;
+- Catalog metadata (anything under `apps/` and per-version YAML) is released
+  under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/) so
+  third parties can mirror and remix it freely. This duality is intentional;
   see [LICENSE.md](LICENSE.md) for the full note.

@@ -9,8 +9,8 @@ If you discover any of the following, report it privately:
 - A listing that contains or points to malware, cryptominers, credential
   stealers, or ransomware.
 - A listing that exfiltrates data or connects to hostile infrastructure.
-- A vulnerability in the catalog's CI, signing pipeline, or validation scripts
-  that could let a bad actor publish an unreviewed listing.
+- A vulnerability in the catalog's CI or validation scripts that could let a
+  bad actor publish an unreviewed listing.
 - A supply-chain attack (typosquatting, dependency confusion, impersonated
   maintainer identity).
 - Leaked secrets inside a `manifest.yaml`, README, or repo history.
@@ -44,7 +44,8 @@ not in scope for reports to this project:
   own maintainer (see `maintainers[]` in the app's `manifest.yaml`).
 - Vulnerabilities in the Moses platform — report via the Moses platform repo's
   own security policy.
-- Vulnerabilities in third-party OCI registries that host the actual images.
+- Vulnerabilities in the upstream source repositories or build toolchains
+  that each Moses instance pulls from when building these apps.
 
 ## Safe-harbor / coordinated disclosure
 
@@ -57,11 +58,18 @@ research that:
 - Gives us a reasonable window (typically 30 days for high/critical, or an
   agreed timeline) before public disclosure.
 
-## Signing & verification
+## Verification model
 
-Every merged `index.json` is signed via keyless
-[cosign](https://docs.sigstore.dev/cosign/signing/) using GitHub Actions OIDC +
-Fulcio + Rekor. The certificate identity is `@github.com` from the issuer
-`https://token.actions.githubusercontent.com`. Moses instances verify this on
-every sync. If you see an `index.json` whose signature does not verify, treat
-it as hostile and report it.
+There is no signed index and no cosign step — Moses instances clone this Git
+repository directly and read manifests out of the working tree. Trust is
+anchored on:
+
+- The Git remote URL (the official catalog URL is platform-managed and seeded
+  by the Moses bootstrap service; tenants cannot rewrite it).
+- The catalog's PR review workflow (every listing change passes CI schema
+  validation and human review before merge).
+- The per-listing pinned `commit` SHA inside each version file — Moses
+  refuses to build a tag whose resolved commit does not match.
+
+If you see a listing whose `commit` field disagrees with the upstream tag, or
+a manifest that bypassed CI, treat it as hostile and report it.

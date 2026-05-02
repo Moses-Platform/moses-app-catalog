@@ -7,10 +7,11 @@ body:
     attributes:
       value: |
         Use this form to report problems with a **published** catalog entry —
-        wrong description, broken `repositoryUrl`, image digest that 404s,
-        screenshot URLs that no longer load, etc. For problems with the app
-        itself (crashes, missing features), please open the issue against
-        the app's own repository instead.
+        wrong description, broken `repositoryUrl`, a `commit` that does not
+        match the declared `tag` upstream, screenshot URLs that no longer
+        load, etc. For problems with the app itself (crashes, missing
+        features), please open the issue against the app's own repository
+        instead.
   - type: input
     id: slug
     attributes:

@@ -29,8 +29,8 @@ The MIT license above applies to the **code** in this repository: everything
 under `scripts/`, `schema/`, `.github/`, the `Makefile`, `package.json`, and
 any other executable or machine-consumed tooling.
 
-The **catalog metadata** — everything under `apps/`, the generated `index.json`
-at the repo root, and the cosign signatures under `signatures/` — is dedicated
+The **catalog metadata** — everything under `apps/` (each listing's
+`manifest.yaml` and per-version files) plus `categories.yaml` — is dedicated
 to the public domain under [CC0-1.0]. This makes it trivial for third parties
 to mirror, filter, relabel, or republish the catalog as their own fleet needs
 demand, without any license negotiation. Contributors who submit a listing
