@@ -1,0 +1,30 @@
+# =============================================================================
+# Per-version skeleton (git-native).
+#
+# Filename rule: this file's name MUST be `<tag>.yaml` — it must equal the
+# `tag` field below with a `.yaml` suffix. CI rejects mismatches.
+#
+# Together, `tag` and `commit` pin the exact source state Moses builds from.
+# Schema reference: ../../../../../schema/version.schema.json
+# =============================================================================
+
+# Literal git tag in the upstream repo. Include the leading 'v' if your repo
+# uses it; use bare semver if it does not.
+tag: v0.1.0
+
+# 40-character lowercase hex SHA the tag resolves to. The validator runs
+# `git rev-parse <tag>` against your source repo and rejects this version if
+# the result does not match.
+commit: 0000000000000000000000000000000000000000
+
+# RFC3339 timestamp of the release.
+releasedAt: 2026-04-19T00:00:00Z
+
+# Minimum Moses platform version this app requires (semver).
+mosesMinVersion: 0.1.0
+
+releaseNotes: |
+  First public release.
+
+# yanked: false
+# yankedReason: "Reason for withdrawing this version (only when yanked: true)."
