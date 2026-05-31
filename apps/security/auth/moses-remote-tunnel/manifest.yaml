@@ -1,0 +1,14 @@
+schemaVersion: 1
+toolKey: moses-remote-tunnel
+displayName: Moses Remote Tunnel
+description: Create a private or public remote tunnel
+appType: hybrid
+category: security
+subcategory: auth
+repositoryType: github
+repositoryUrl: https://github.com/Moses-Apps/moses-remote-tunnel.git
+maintainers:
+    - github: Moses-Manager
+      role: owner
+policy:
+    license: MIT
