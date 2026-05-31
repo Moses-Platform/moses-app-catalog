@@ -1,0 +1,14 @@
+schemaVersion: 1
+toolKey: moses-chat-bot
+displayName: Moses Chat Bot
+description: Chat bot integration for telegram, future implementations may include discord and other targets
+appType: hybrid
+category: communication
+subcategory: chat
+repositoryType: github
+repositoryUrl: https://github.com/Moses-Apps/moses-chat-bot
+maintainers:
+    - github: Moses-Manager
+      role: owner
+policy:
+    license: MIT
