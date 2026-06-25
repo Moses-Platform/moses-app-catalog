@@ -152,6 +152,32 @@
           "maxLength": 100
         }
       }
+    },
+    "versionPolicy": {
+      "description": "Optional policy for live newest-tag resolution. When present, the Moses platform resolves the newest matching upstream tag at install time instead of reading per-version files. All fields are optional and can be combined.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minTag": {
+          "description": "Semver lower bound (inclusive). Only tags >= this value are considered by the resolver.",
+          "type": "string"
+        },
+        "excludeTags": {
+          "description": "Exact tag strings to skip, regardless of semver order (e.g. known-broken releases).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowPrerelease": {
+          "description": "When true, pre-release semver tags (e.g. v1.2.0-beta.1) are eligible for resolution. Defaults to false.",
+          "type": "boolean"
+        },
+        "mosesMinVersion": {
+          "description": "Minimum Moses platform version required to install this app (semver). The platform will refuse to install on older versions.",
+          "type": "string"
+        }
+      }
     }
   }
 }

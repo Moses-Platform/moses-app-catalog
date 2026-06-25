@@ -334,9 +334,9 @@ async function validateAppDir(dir, opts) {
     );
   }
 
-  if (versionFiles.length === 0) {
-    errs.push(`${relPath(versionsDir)}: at least one per-version file is required`);
-  }
+  // versions/ dir and per-version files are OPTIONAL.
+  // Listings that rely on the platform's live newest-tag resolution (versionPolicy)
+  // do not need versions/ files at all. Existing files are still fully validated.
 
   const seenTags = new Set();
   for (const fname of versionFiles) {
