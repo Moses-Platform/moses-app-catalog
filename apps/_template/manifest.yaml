@@ -69,3 +69,23 @@ policy:
   # SPDX identifier (https://spdx.org/licenses/). The validator also looks for
   # a LICENSE / COPYING file at the root of your source repo.
   license: MIT
+
+# --- Version policy (optional) ----------------------------------------------
+# When present, Moses resolves the newest matching upstream tag at install time
+# instead of reading per-version files. If you do not include this block, you
+# should ship versions/<tag>.yaml files (the traditional approach).
+# All sub-fields are optional; include only what you need.
+#
+# versionPolicy:
+#   # Only consider tags >= this semver lower bound.
+#   minTag: "1.0.0"
+#
+#   # Skip these specific tags regardless of semver order.
+#   excludeTags:
+#     - "1.2.3"
+#
+#   # Set to true to allow pre-release tags (e.g. v1.3.0-beta.1).
+#   allowPrerelease: false
+#
+#   # Minimum Moses platform version required to install this app.
+#   mosesMinVersion: "0.0.100"
